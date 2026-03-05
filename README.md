@@ -55,7 +55,7 @@ This project combines Artificial Intelligence, Computer Vision, and Image Proces
 ---
 
 ## System Architecture
-
+``` bash
 User
 │
 ▼
@@ -83,7 +83,7 @@ Database (MySQL/SQLite)
 │
 ▼
 Virtual Try-On Display
-
+```
 
 ---
 
