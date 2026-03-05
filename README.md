@@ -87,16 +87,27 @@ Virtual Try-On Display
 
 ---
 
-## Installation
+## ⚙ Installation
 
-Clone the repository
+### Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/Insta-Fit.git
-cd Insta-Fit
+git clone https://github.com/Abhi2790/Insta-Fit-AI-Virtual-Trial-Room.git
+cd Insta-Fit-AI-Virtual-Trial-Room
+```
+
+### Install Dependencies
+
+```bash
 pip install -r requirements.txt
+```
+
+### Run Application
+
+```bash
 python app.py
 ```
+
 ## Project Structure
 ```bash
 Insta-Fit
