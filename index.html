@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<!--
+  InstaFit — AI Virtual Try-On
+  ==============================
+  FILE STRUCTURE (all in same folder):
+    index.html   ← this file
+    styles.css   ← all styling
+    catalog.js   ← clothing data  (add items here)
+    app.js       ← all UI logic
+    bg.jpg       ← your background photo  ← YOU ADD THIS
+    logo.png     ← your logo image        ← YOU ADD THIS
+    clothes/     ← clothing PNGs (Phase 3)
+
+  PHASE ROADMAP:
+    ✅ Phase 1 — Working UI (current)
+    🔲 Phase 2 — Body tracking  → uncomment pose.js scripts below
+    🔲 Phase 3 — Real PNG clothes → uncomment clothes.js below
+    🔲 Phase 4 — AI warp backend (HR-VITON)
+    🔲 Phase 5 — Product link scraper
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <title>InstaFit – AI Virtual Try-On</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- All styles -->
+  <link rel="stylesheet" href="styles.css">
+
+  <!--
+    Phase 2: Uncomment these when activating body tracking
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  -->
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════
+       NAVBAR
+  ═══════════════════════════════════════════════ -->
+  <nav>
+    <div class="nav-logo">
+      <!-- logo.png — place in same folder as this file -->
+      <img class="logo-img" src="logo.png" alt="InstaFit" onerror="this.style.display='none'">
+      <div class="logo-text">Insta<span>Fit</span></div>
+    </div>
+    <div class="nav-title">AI Clothes Try Page</div>
+    <div class="nav-links">
+      <a href="#">Home</a>
+      <a href="#">Shop</a>
+      <a href="#">Contact Us</a>
+    </div>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════════
+       MAIN 3-COLUMN LAYOUT
+       [Left: Catalog] | [Center: Mirror] | [Right: Controls]
+  ═══════════════════════════════════════════════ -->
+  <div class="main-layout" id="main-layout">
+
+
+    <!-- ── LEFT PANEL — CATALOG ─────────────────── -->
+    <!-- max-height in CSS keeps it floating, never touching bottom -->
+    <div class="catalog-panel">
+
+      <!-- Male / Female toggle -->
+      <div class="gender-toggle">
+        <button class="gender-btn"        id="btn-male"   onclick="setGender('male')">Male</button>
+        <button class="gender-btn active" id="btn-female" onclick="setGender('female')">Female</button>
+      </div>
+
+      <!-- Scrollable frosted catalog box -->
+      <div class="catalog-box">
+        <div class="catalog-title">Clothes Catalog</div>
+
+        <!-- Category filter tabs -->
+        <div class="cat-tabs">
+          <button class="cat-tab active" onclick="setCategory('all',this)">All</button>
+          <button class="cat-tab"        onclick="setCategory('tops',this)">Tops</button>
+          <button class="cat-tab"        onclick="setCategory('jackets',this)">Jackets</button>
+          <button class="cat-tab"        onclick="setCategory('dresses',this)">Dresses</button>
+          <button class="cat-tab"        onclick="setCategory('bottoms',this)">Bottoms</button>
+        </div>
+
+        <!-- Clothing grid — populated by renderGrid() in app.js -->
+        <div class="clothes-grid" id="clothes-grid"></div>
+      </div>
+
+    </div>
+
+
+    <!-- ── CENTER — MIRROR ──────────────────────── -->
+    <!--
+      Rounded-rectangle mirror matching the reference photo.
+      LED glow frame — no fill, transparent glass.
+      Camera button sits OUTSIDE the glass so nothing blocks clicks.
+    -->
+    <div class="mirror-center">
+      <div class="mirror-outer">
+
+        <!-- LED glow frame (CSS only) -->
+        <div class="mirror-frame"></div>
+
+        <!-- Transparent glass — webcam + overlay inside -->
+        <div class="mirror-glass">
+          <video id="video" autoplay playsinline muted></video>
+          <canvas id="overlay-canvas"></canvas>
+          <div class="mirror-tint"></div>
+
+          <!-- Shown before camera starts -->
+          <div class="mirror-placeholder" id="mirror-placeholder">
+            <!-- <div class="placeholder-icon"></div> -->
+            <div class="placeholder-text">Tap 📷 to start camera</div>
+          </div>
+
+          <!-- Loading spinner -->
+          <div class="loading-overlay" id="loading">
+            <div class="spinner"></div>
+            <div class="spin-label">Starting…</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Floor glow -->
+      <div class="mirror-reflection"></div>
+
+      <!--
+        CAMERA BUTTON
+        • Outside the glass — always clickable
+        • z-index 9999 + pointer-events:all in CSS
+        • Blue = off | Red + pulse = live
+      -->
+      <button class="mirror-cam-btn"
+              id="mirror-cam-btn"
+              onclick="toggleCamera()"
+              aria-label="Toggle camera">
+        <span class="mirror-cam-icon" id="cam-icon">📷</span>
+        <span class="mirror-cam-label" id="cam-label">Camera</span>
+      </button>
+    </div>
+
+
+    <!-- ── RIGHT PANEL — CONTROLS ───────────────── -->
+    <div class="controls-panel">
+
+      <!-- Body confidence bar (fills when pose.js is connected) -->
+      <div class="conf-row">
+        <span class="conf-label">Body</span>
+        <div class="conf-track"><div id="confidence-bar"></div></div>
+        <span id="confidence-val">0%</span>
+      </div>
+
+      <!-- Fit adjust -->
+      <div class="control-box">
+        <div class="control-title">Adjust Fit</div>
+        <div class="fit-row">
+          <button class="fit-pm"        onclick="adjustFit('looser')">+</button>
+          <button class="fit-label-btn" onclick="adjustFit('looser')">Looser</button>
+        </div>
+        <div class="fit-row" style="margin-bottom:0">
+          <button class="fit-pm"        onclick="adjustFit('tighter')">−</button>
+          <button class="fit-label-btn" onclick="adjustFit('tighter')">Tighter</button>
+        </div>
+      </div>
+
+      <!-- Size selector -->
+      <div class="control-box">
+        <div class="control-title">Size</div>
+        <div class="size-grid">
+          <button class="size-btn"        onclick="setSize('S',this)">S</button>
+          <button class="size-btn active" onclick="setSize('M',this)">M</button>
+          <button class="size-btn"        onclick="setSize('L',this)">L</button>
+          <button class="size-btn"        onclick="setSize('XL',this)">XL</button>
+        </div>
+      </div>
+
+      <!-- Product link (coming soon) -->
+      <div class="link-box">
+        <div class="link-label">Paste Product Link</div>
+        <div class="link-input-row">
+          <input class="link-input" type="text"
+                 placeholder="Amazon / Meesho / Flipkart…"
+                 id="product-link" disabled>
+          <button class="link-go" disabled>Go</button>
+        </div>
+        <div class="link-coming">Link feature — coming soon</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-btns">
+        <button class="action-btn snap"  onclick="takeSnapshot()">📸 Snapshot</button>
+        <button class="action-btn clear" onclick="clearSelection()">✕ Clear</button>
+      </div>
+
+    </div>
+
+  </div><!-- /main-layout -->
+
+
+  <!-- ═══════════════════════════════════════════════
+       PEEK TABS — edge arrows shown in focus mode
+  ═══════════════════════════════════════════════ -->
+  <button class="peek-tab peek-tab-left"  id="peek-left"  onclick="showPanel()" title="Show Catalog">
+    <svg viewBox="0 0 10 16"><polyline points="7,2 2,8 7,14"/></svg>
+  </button>
+  <button class="peek-tab peek-tab-right" id="peek-right" onclick="showPanel()" title="Show Controls">
+    <svg viewBox="0 0 10 16"><polyline points="3,2 8,8 3,14"/></svg>
+  </button>
+
+  <!-- Notification toast -->
+  <div class="notif" id="notif"></div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       SCRIPTS — load order matters, do not reorder
+  ═══════════════════════════════════════════════ -->
+
+  <!-- 1. Clothing data — must load before app.js -->
+  <script src="catalog.js"></script>
+
+  <!-- Phase 2: uncomment for body tracking -->
+   <script src="overlay.js"></script> 
+   <script src="clothes.js"></script> 
+  <script src="pose.js"></script>    
+
+  <!-- 2. Main app logic — loads last -->
+  <script src="app.js"></script>
+
+</body>
+</html>

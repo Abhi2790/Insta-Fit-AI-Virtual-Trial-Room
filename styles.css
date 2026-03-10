@@ -1,0 +1,801 @@
+/* =====================================================
+   INSTAFIT — styles.css
+   - Photo background (bg.jpg — place in same folder)
+   - Rounded-rectangle LED mirror
+   - All panels & navbar: frosted glass
+   - Left panel floats (never touches screen bottom)
+   - Camera button: large, always clickable
+
+   TABLE OF CONTENTS:
+     1.  Variables & Reset
+     2.  Body & Background
+     3.  Navbar
+     4.  Main Grid
+     5.  Left Panel — Catalog
+     6.  Mirror
+     7.  Camera Button
+     8.  Right Panel — Controls
+     9.  Peek Tabs
+    10.  Notification Toast
+    11.  Responsive
+    12.  Entrance Animations
+===================================================== */
+
+/* ── 1. VARIABLES & RESET ─────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Frosted glass system */
+  --fg:    rgba(255, 255, 255, 0.08);  /* panel fill */
+  --fb:    rgba(255, 255, 255, 0.18);  /* panel border */
+  --fblur: blur(20px);
+  --fsh:   0 8px 32px rgba(0, 0, 0, .32);
+
+  /* Text */
+  --t1: rgba(255, 255, 255, 0.92);
+  --t2: rgba(255, 255, 255, 0.55);
+  --t3: rgba(255, 255, 255, 0.30);
+
+  /* Accent */
+  --led:  #a8d8ff;
+  --gold: #e8c068;
+
+  /* Layout */
+  --nav: clamp(52px, 7vh, 66px);
+  --pr:  16px; /* panel border-radius */
+
+  /* Max panel height — keeps panels floating off bottom edge */
+  --pmh: calc(100dvh - var(--nav) - clamp(36px, 5.5vh, 64px));
+}
+
+html { font-size: clamp(13px, 1.2vw, 15px); }
+
+
+/* ── 2. BODY & BACKGROUND ────────────────────────── */
+/* Place your room photo as bg.jpg in the same folder */
+body {
+  font-family: 'Jost', sans-serif;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: url('bg.png') center / cover no-repeat fixed;
+}
+
+/* Dark scrim so panels pop against photo */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 5, 3, .42);
+  z-index: 0;
+  pointer-events: none;
+}
+
+
+/* ── 3. NAVBAR — frosted glass ───────────────────── */
+nav {
+  position: relative;
+  z-index: 200;
+  height: var(--nav);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(16px, 3vw, 40px);
+  gap: 12px;
+  flex-shrink: 0;
+  background: rgba(165, 159, 152, 0.44);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border-bottom: 1px solid var(--fb);
+}
+
+.nav-logo  { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+
+/* Place your logo as logo.png in the same folder */
+.logo-img  {
+   width: clamp(40px, 5vw, 65px);
+  height: clamp(40px, 5vw, 65px);
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(146, 124, 87, 0.75));
+}
+
+.logo-text {
+  font-family: 'Italiana', serif;
+  font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-shadow: 0 0 18px rgba(201, 148, 58, .5);
+}
+.logo-text span { color: #fff; font-weight: 300; }
+
+.nav-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(.68rem, 1.1vw, 1rem);
+  font-weight: 300;
+  letter-spacing: 6px;
+  color: var(--t2);
+  text-transform: uppercase;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-links { display: flex; align-items: center; gap: clamp(14px, 2vw, 30px); flex-shrink: 0; }
+.nav-links a {
+  font-size: clamp(.65rem, .84vw, .8rem);
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--t2);
+  text-decoration: none;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+@media (max-width: 700px) { .nav-title { display: none; } }
+@media (max-width: 480px) { .nav-links { display: none; } }
+
+
+/* ── 4. MAIN GRID ────────────────────────────────── */
+.main-layout {
+  position: relative;
+  z-index: 10;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: clamp(180px, 21vw, 268px) 1fr clamp(200px, 23vw, 285px);
+  padding: clamp(12px, 1.8vh, 20px) clamp(10px, 1.6vw, 18px);
+  overflow: hidden;
+  align-items: center;
+  transition: grid-template-columns .45s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Focus mode — side panels collapse when camera is on */
+.main-layout.focus-mode {
+  grid-template-columns: 0px 1fr 0px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+
+/* ── 5. LEFT PANEL — CATALOG ─────────────────────── */
+/* max-height = --pmh keeps it floating, never touching bottom */
+.catalog-panel {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1.1vh, 11px);
+  padding-right: clamp(7px, 1.1vw, 12px);
+  min-height: 0;
+  max-height: var(--pmh);
+  overflow: hidden;
+  transition: opacity .3s ease, transform .45s cubic-bezier(.4, 0, .2, 1);
+  transform-origin: left center;
+}
+.focus-mode .catalog-panel { opacity: 0; transform: translateX(-22px); pointer-events: none; }
+
+/* Gender toggle pill */
+.gender-toggle {
+  display: flex;
+  background: var(--fg);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border: 1px solid var(--fb);
+  border-radius: 30px;
+  padding: 4px;
+  box-shadow: var(--fsh);
+  flex-shrink: 0;
+}
+.gender-btn {
+  flex: 1;
+  padding: clamp(5px, .9vh, 8px) 12px;
+  border: none;
+  border-radius: 26px;
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.68rem, .83vw, .78rem);
+  font-weight: 500;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all .22s;
+  background: transparent;
+  color: var(--t2);
+}
+.gender-btn.active { background: rgba(255, 255, 255, .17); color: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, .25); }
+
+/* Catalog scrollable box */
+.catalog-box {
+  background: var(--fg);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border: 1px solid var(--fb);
+  border-radius: var(--pr);
+  padding: clamp(10px, 1.3vw, 14px);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  box-shadow: var(--fsh);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, .18) transparent;
+}
+.catalog-box::-webkit-scrollbar       { width: 3px; }
+.catalog-box::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .18); border-radius: 2px; }
+
+.catalog-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(.92rem, 1.2vw, 1.1rem);
+  font-weight: 600;
+  color: var(--t1);
+  margin-bottom: 9px;
+  letter-spacing: 1px;
+}
+
+/* Category tabs */
+.cat-tabs { display: flex; gap: 4px; margin-bottom: 9px; flex-wrap: wrap; }
+.cat-tab {
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .17);
+  background: transparent;
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.54rem, .68vw, .64rem);
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--t2);
+  cursor: pointer;
+  transition: all .17s;
+}
+.cat-tab.active { background: rgba(255, 255, 255, .17); border-color: rgba(255, 255, 255, .38); color: #fff; }
+
+/* 2-column clothing grid */
+.clothes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(5px, .75vw, 8px); }
+
+/* Clothing card */
+.cloth-card {
+  background: rgba(255, 255, 255, .06);
+  border-radius: 9px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, .09);
+  transition: all .2s;
+  position: relative;
+}
+.cloth-card:hover    { background: rgba(255,255,255,.14); border-color: rgba(168,216,255,.45); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.28); }
+.cloth-card.selected { border-color: var(--led); box-shadow: 0 0 0 2px rgba(168,216,255,.28); background: rgba(168,216,255,.07); }
+
+.cloth-img-wrap { padding: 8px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1; }
+.cloth-emoji    { font-size: clamp(1.6rem, 2.6vw, 2.4rem); line-height: 1; }
+.cloth-label    { padding: 4px 5px; font-size: clamp(.52rem,.66vw,.62rem); font-weight: 500; color: var(--t2); text-align: center; border-top: 1px solid rgba(255,255,255,.07); }
+
+/* Selection dot */
+.selected-dot {
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--led);
+  display: none;
+  box-shadow: 0 0 6px var(--led);
+}
+.cloth-card.selected .selected-dot { display: block; }
+
+
+/* ── 6. MIRROR ───────────────────────────────────── */
+/* Tall rounded-rectangle with blue/white LED glow frame.
+   Glass is fully transparent — background photo shows through. */
+.mirror-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible;
+  height: 100%;
+}
+
+.mirror-outer {
+  position: relative;
+  height: calc(100dvh - var(--nav) - clamp(18px, 2.8vh, 30px));
+  /* Width ratio — increase 0.60 to make mirror wider, e.g. 0.72 */
+  width: calc((100dvh - var(--nav) - clamp(18px, 3vh, 40px)) * 0.68);
+  max-width: min(55vw, 750px);
+  flex-shrink: 0;
+  border-radius: clamp(22px, 3.5vw, 44px); /* rounded rect corners */
+}
+
+/* LED glow frame — no solid fill, only glowing border */
+.mirror-frame {
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: transparent;
+  pointer-events: none;
+  z-index: 5;
+  box-shadow:
+    0 0 0 3px rgba(215, 238, 255, .94),
+    0 0 14px 5px rgba(168, 216, 255, .90),
+    0 0 40px 10px rgba(120, 190, 255, .48),
+    0 0 80px 20px rgba(100, 170, 255, .20),
+    inset 0 0 0 2px rgba(255, 255, 255, .30);
+  animation: ledPulse 3.5s ease-in-out infinite;
+}
+
+@keyframes ledPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 3px rgba(205, 233, 255, .88),
+      0 0 14px 5px rgba(168, 216, 255, .82),
+      0 0 40px 10px rgba(120, 190, 255, .42),
+      0 0 80px 20px rgba(100, 170, 255, .17),
+      inset 0 0 0 2px rgba(255, 255, 255, .26);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(225, 244, 255, 1),
+      0 0 18px 7px rgba(168, 216, 255, 1),
+      0 0 58px 14px rgba(120, 190, 255, .64),
+      0 0 115px 28px rgba(100, 170, 255, .28),
+      inset 0 0 0 2px rgba(255, 255, 255, .50);
+  }
+}
+
+/* Glass interior — transparent */
+.mirror-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Webcam feed — horizontally mirrored to act like a real mirror */
+#video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  display: block;
+  opacity: 0;
+  transition: opacity .6s;
+}
+#video.active { opacity: 1; }
+
+/* Clothing overlay canvas */
+#overlay-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  transform: scaleX(-1); /* must match video flip */
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Subtle glass surface sheen */
+.mirror-tint {
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg, rgba(255,255,255,.04) 0%, rgba(200,225,255,.02) 45%, transparent 75%);
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* Placeholder — shown before camera starts */
+.mirror-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px;
+  z-index: 8;
+  background: transparent;
+  border-radius: inherit;
+}
+.mirror-placeholder.hidden { display: none; }
+
+.placeholder-icon {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  opacity: .48;
+  filter: drop-shadow(0 0 12px rgba(168, 216, 255, .5));
+}
+.placeholder-text {
+  font-size: clamp(.62rem, .86vw, .76rem);
+  color: rgba(255, 255, 255, .46);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 14px;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, .9);
+}
+
+/* Loading spinner shown while camera permission is requested */
+.loading-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  background: rgba(0, 0, 0, .22);
+  backdrop-filter: blur(4px);
+  z-index: 20;
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s;
+  border-radius: inherit;
+}
+.loading-overlay.active { opacity: 1; pointer-events: all; }
+
+.spinner {
+  width: 30px; height: 30px;
+  border: 2px solid rgba(255, 255, 255, .13);
+  border-top-color: var(--led);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin-label { font-size: .66rem; color: rgba(255, 255, 255, .44); letter-spacing: 2px; }
+
+/* Soft floor reflection glow beneath the mirror */
+.mirror-reflection {
+  width: clamp(90px, 18vw, 200px);
+  height: clamp(12px, 2vh, 24px);
+  background: radial-gradient(ellipse at top, rgba(168, 216, 255, .13) 0%, transparent 70%);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+
+/* ── 7. CAMERA BUTTON ────────────────────────────── */
+/* Sits outside the mirror glass so nothing can block clicks.
+   z-index 9999 + pointer-events:all ensures it's always tappable. */
+.mirror-cam-btn {
+  position: absolute;
+  bottom: clamp(6px, 1.4vh, 16px);
+  left: calc(50% - clamp(16px, 2.6vw, 28px));
+  transform: translateX(-50%);
+
+  width: clamp(62px, 7vw, 74px);
+  height: clamp(62px, 7vw, 74px);
+  border-radius: 50%;
+
+  z-index: 9999;
+  pointer-events: all !important;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: manipulation;
+  outline: none;
+
+  background: rgba(23, 36, 48, 0.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 2px solid rgba(182, 130, 130, 0.22);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .55), 0 0 0 1px rgba(168, 216, 255, .28);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'Italiana', serif;
+  transition: background .22s ease, border-color .22s ease;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, .55), 0 0 0 1px rgba(168, 216, 255, .28);
+    animation: camGlow 2.5s ease-in-out infinite;
+   
+  }
+
+@keyframes camGlow {
+  0%, 100% {
+    box-shadow:
+      0 4px 24px rgba(0,0,0,.55),
+      0 0 0 2px rgba(168,216,255,.40),
+      0 0 18px 8px rgba(168,216,255,.35),
+      0 0 35px 14px rgba(168,216,255,.20);
+  }
+  50% {
+    box-shadow:
+      0 4px 28px rgba(0,0,0,.55),
+      0 0 0 4px rgba(168,216,255,.90),
+      0 0 30px 14px rgba(168,216,255,.70),
+      0 0 60px 24px rgba(168,216,255,.40),
+      0 0 90px 36px rgba(168,216,255,.20);
+  }
+}
+
+.mirror-cam-btn:hover {
+  background: rgba(22, 40, 78, .82);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, .65), 0 0 0 2px rgba(168, 216, 255, .55);
+}
+.mirror-cam-btn:active {
+  filter: brightness(1.3);
+  transition: filter .07s;
+}
+
+/* ON state — red */
+.mirror-cam-btn.on {
+  animation: none;
+  background: rgba(175, 35, 22, .74);
+  border-color: rgba(231, 76, 60, .44);
+  box-shadow: 0 4px 24px rgba(192, 57, 43, .58), 0 0 0 1px rgba(231, 76, 60, .36);
+}
+.mirror-cam-btn.on:hover {
+  box-shadow: 0 6px 28px rgba(192, 57, 43, .75), 0 0 0 2px rgba(231, 76, 60, .58);
+}
+
+/* Outward pulse ring when live */
+.mirror-cam-btn.on::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid rgba(231, 76, 60, .44);
+  animation: camPulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes camPulse {
+  0%   { transform: scale(1);   opacity: .7; }
+  100% { transform: scale(1.7); opacity: 0;  }
+}
+
+.mirror-cam-icon  { font-size: clamp(1.3rem, 2.2vw, 1.6rem); line-height: 1; }
+.mirror-cam-label {
+  font-size: clamp(.38rem, .52vw, .48rem);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .60);
+  font-weight: 500;
+}
+
+
+/* ── 8. RIGHT PANEL — CONTROLS ───────────────────── */
+/* Frosted glass, vertically centred, never touches edges */
+.controls-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(7px, 1.1vh, 11px);
+  padding-left: clamp(7px, 1.1vw, 12px);
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  max-height: var(--pmh);
+  transition: opacity .3s ease, transform .45s cubic-bezier(.4, 0, .2, 1);
+  transform-origin: right center;
+}
+.controls-panel::-webkit-scrollbar { display: none; }
+.focus-mode .controls-panel { opacity: 0; transform: translateX(22px); pointer-events: none; }
+
+/* Frosted card — wraps each control group */
+.control-box {
+  background: var(--fg);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border: 1px solid var(--fb);
+  border-radius: var(--pr);
+  padding: clamp(10px, 1.3vw, 15px);
+  box-shadow: var(--fsh);
+  flex-shrink: 0;
+}
+.control-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(.86rem, 1.1vw, 1rem);
+  font-weight: 600;
+  color: var(--t1);
+  margin-bottom: clamp(7px, 1vh, 10px);
+  letter-spacing: 1px;
+}
+
+/* Fit +/- row */
+.fit-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.fit-pm {
+  width: clamp(27px, 2.8vw, 33px);
+  height: clamp(27px, 2.8vw, 33px);
+  border-radius: 7px;
+  border: 1px solid var(--fb);
+  background: rgba(255, 255, 255, .09);
+  font-size: 1rem; font-weight: 300;
+  color: var(--t1);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all .17s;
+}
+.fit-pm:hover { background: rgba(255, 255, 255, .20); }
+
+.fit-label-btn {
+  flex: 1;
+  padding: clamp(5px, .85vh, 7px) 10px;
+  border-radius: 7px;
+  border: 1px solid var(--fb);
+  background: rgba(255, 255, 255, .07);
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.66rem, .8vw, .76rem);
+  font-weight: 500; letter-spacing: 1.5px;
+  color: var(--t1);
+  cursor: pointer; text-align: center;
+  transition: all .17s;
+}
+.fit-label-btn:hover { background: rgba(255, 255, 255, .17); }
+
+/* Size buttons */
+.size-grid { display: flex; gap: clamp(4px, .62vw, 6px); }
+.size-btn {
+  flex: 1;
+  padding: clamp(6px, .9vh, 9px) 4px;
+  border-radius: 7px;
+  border: 1px solid var(--fb);
+  background: rgba(255, 255, 255, .07);
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.66rem, .8vw, .78rem);
+  font-weight: 500; letter-spacing: 1px;
+  color: var(--t1);
+  cursor: pointer; text-align: center;
+  transition: all .2s;
+}
+.size-btn:hover  { background: rgba(255,255,255,.17); border-color: rgba(255,255,255,.36); }
+.size-btn.active { background: rgba(168,216,255,.20); border-color: var(--led); color: #fff; box-shadow: 0 0 10px rgba(168,216,255,.28); }
+
+/* Product link box */
+.link-box {
+  background: var(--fg);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border: 1px solid var(--fb);
+  border-radius: var(--pr);
+  padding: clamp(10px, 1.3vw, 15px);
+  box-shadow: var(--fsh);
+  flex-shrink: 0;
+}
+.link-label { font-size: clamp(.54rem,.68vw,.64rem); font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--t2); margin-bottom: 7px; }
+.link-input-row { display: flex; gap: 6px; }
+.link-input {
+  flex: 1;
+  padding: clamp(5px, .85vh, 8px) 9px;
+  border-radius: 7px;
+  border: 1px solid var(--fb);
+  background: rgba(255, 255, 255, .05);
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.62rem, .78vw, .72rem);
+  color: var(--t1);
+  outline: none;
+  transition: border-color .2s;
+  min-width: 0;
+}
+.link-input::placeholder { color: var(--t3); }
+.link-input:focus        { border-color: var(--led); }
+.link-go {
+  padding: clamp(5px, .85vh, 8px) 10px;
+  border-radius: 7px;
+  border: 1px solid var(--fb);
+  background: rgba(255, 255, 255, .09);
+  color: var(--t1);
+  font-family: 'Jost', sans-serif;
+  font-size: clamp(.62rem, .78vw, .72rem);
+  font-weight: 500; letter-spacing: 1px;
+  cursor: pointer; transition: all .17s;
+  opacity: .44; white-space: nowrap;
+}
+.link-go:hover { background: rgba(168,216,255,.20); border-color: var(--led); opacity: 1; }
+.link-coming   { font-size: clamp(.52rem,.66vw,.60rem); color: var(--t3); letter-spacing: 1px; margin-top: 5px; text-align: center; font-style: italic; }
+
+/* Body confidence bar — filled by pose.js (Phase 2) */
+.conf-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--fg);
+  backdrop-filter: var(--fblur);
+  -webkit-backdrop-filter: var(--fblur);
+  border: 1px solid var(--fb);
+  border-radius: 10px;
+  padding: clamp(7px, .95vh, 10px) clamp(9px, 1.2vw, 12px);
+  box-shadow: var(--fsh);
+  flex-shrink: 0;
+}
+.conf-label  { font-size: clamp(.52rem,.66vw,.60rem); letter-spacing: 1.5px; text-transform: uppercase; color: var(--t2); white-space: nowrap; }
+.conf-track  { flex: 1; height: 3px; background: rgba(255,255,255,.10); border-radius: 2px; overflow: hidden; }
+#confidence-bar { height: 100%; width: 0%; background: var(--led); border-radius: 2px; transition: width .2s, background .3s; }
+#confidence-val { font-size: clamp(.52rem,.66vw,.60rem); color: var(--t2); width: 24px; text-align: right; }
+
+/* Action buttons */
+.action-btns { display: flex; gap: clamp(5px, .68vw, 7px); flex-shrink: 0; }
+.action-btn {
+  flex: 1;
+  padding: clamp(7px, 1vh, 9px);
+  border-radius: 8px;
+  font-family: 'Italiana', serif;
+  font-size: clamp(.62rem, .78vw, .72rem);
+  font-weight: 500; letter-spacing: 1px;
+  cursor: pointer; transition: all .17s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.action-btn.snap  { background: rgba(255,255,255,.08); color: var(--t1); border: 1px solid var(--fb); }
+.action-btn.snap:hover  { background: rgba(255,255,255,.18); }
+.action-btn.clear { background: rgba(200,65,65,.13); color: rgba(241, 194, 194, 0.9); border: 1px solid rgba(200,65,65,.22); }
+.action-btn.clear:hover { background: rgba(236, 52, 52, 0.26); }
+
+
+/* ── 9. PEEK TABS ─────────────────────────────────── */
+/* Edge arrows that restore side panels from focus mode */
+.peek-tab {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  z-index: 400;
+  width: 19px; height: 64px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.07);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.16);
+  cursor: pointer; transition: all .3s;
+  opacity: 0; pointer-events: none;
+}
+.peek-tab-left  { left: 0;  border-radius: 0 10px 10px 0; border-left: none; }
+.peek-tab-right { right: 0; border-radius: 10px 0 0 10px; border-right: none; }
+.peek-tab svg { width: 9px; height: 9px; fill: none; stroke: rgba(255,255,255,.58); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.peek-tab.visible { opacity: 1; pointer-events: all; }
+.peek-tab:hover { background: rgba(168,216,255,.16); width: 25px; }
+.peek-tab:hover svg { stroke: var(--led); }
+
+
+/* ── 10. NOTIFICATION TOAST ──────────────────────── */
+.notif {
+  position: fixed;
+  bottom: clamp(16px, 2.6vh, 26px);
+  left: 50%;
+  transform: translateX(-50%) translateY(14px);
+  background: rgba(12, 18, 32, .86);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(168, 216, 255, .22);
+  color: #fff;
+  padding: clamp(8px, 1.1vh, 10px) clamp(15px, 1.9vw, 20px);
+  border-radius: 8px;
+  font-size: clamp(.66rem, .84vw, .76rem);
+  letter-spacing: .5px;
+  opacity: 0;
+  transition: all .25s;
+  z-index: 9000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, .42);
+  white-space: nowrap;
+}
+.notif.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+
+/* ── 11. RESPONSIVE ──────────────────────────────── */
+@media (max-width: 900px) {
+  .main-layout {
+    grid-template-columns: clamp(145px, 29vw, 200px) 1fr;
+    grid-template-rows: 1fr auto;
+    align-items: start;
+  }
+  .controls-panel {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    overflow-x: auto; overflow-y: hidden;
+    justify-content: flex-start;
+    padding: clamp(7px, 1.3vh, 11px) clamp(9px, 1.8vw, 14px);
+    gap: 9px; max-height: none;
+    background: rgba(8,5,2,.46);
+    backdrop-filter: var(--fblur);
+    border-top: 1px solid var(--fb);
+  }
+  .controls-panel .control-box,
+  .controls-panel .link-box,
+  .controls-panel .conf-row,
+  .controls-panel .action-btns { flex-shrink: 0; min-width: clamp(145px, 26vw, 205px); }
+}
+
+@media (max-width: 600px) {
+  .main-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; padding: 7px 7px 0; align-items: start; }
+  .catalog-panel { display: none; }
+  .mirror-outer {
+    width: min(68vw, calc((100dvh - var(--nav) - 105px) * 0.60));
+    height: calc(100dvh - var(--nav) - 105px);
+    max-width: none;
+  }
+}
+
+
+/* ── 12. ENTRANCE ANIMATIONS ─────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.catalog-panel  { animation: fadeUp .44s ease .10s both; }
+.mirror-center  { animation: fadeUp .44s ease .18s both; }
+.controls-panel { animation: fadeUp .44s ease .26s both; }
+.mirror-cam-btn { animation: fadeUp .44s ease .40s both; }
